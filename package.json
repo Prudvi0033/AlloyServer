@@ -14,7 +14,10 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "bcryptjs": "^3.0.3",
     "hono": "^4.11.10",
+    "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.1"
   }
 }
