@@ -3,7 +3,7 @@ import User from "../models/user.model";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-export const authController = async (c: Context) => {
+export const signupController = async (c: Context) => {
   try {
     const { username, password } = await c.req.json();
 
@@ -11,40 +11,25 @@ export const authController = async (c: Context) => {
       return c.json({ data: "Username and password are required" }, 400);
     }
 
-    const existingUser = await User.findOne({ username: username.toLowerCase() });
+    const existingUser = await User.findOne({
+      username: username.toLowerCase(),
+    });
 
     if (existingUser) {
-      const isMatch = await bcrypt.compare(password, existingUser.password);
-
-      if (!isMatch) {
-        return c.json({ data: "Invalid credentials" }, 401);
-      }
-
-      const token = jwt.sign(
-        { id: existingUser._id },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "7d" },
-      );
-
-      return c.json({
-        data: {
-          token,
-          username: existingUser.username,
-        },
-      });
+      return c.json({ data: "Username already exists" }, 409);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = await User.create({
-      username,
+      username: username.toLowerCase(),
       password: hashedPassword,
     });
 
     const token = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET as string,
-      { expiresIn: "7d" },
+      { expiresIn: "1d" }
     );
 
     return c.json({
@@ -54,28 +39,47 @@ export const authController = async (c: Context) => {
       },
     });
   } catch (error) {
-    console.error("Auth error:", error);
+    console.error("Signup error:", error);
     return c.json({ data: "Internal Server Error" }, 500);
   }
 };
 
-export const checkUsername = async (c: Context) => {
+export const loginController = async (c: Context) => {
   try {
-    const { username } = await c.req.json();
+    const { username, password } = await c.req.json();
 
-    if (!username) {
-      return c.json({ data: "Username required" }, 400);
+    if (!username || !password) {
+      return c.json({ data: "Username and password are required" }, 400);
     }
 
-    const user = await User.findOne({ username: username.toLowerCase() });
+    const user = await User.findOne({
+      username: username.toLowerCase(),
+    });
+
+    if (!user) {
+      return c.json({ data: "Invalid credentials" }, 401);
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return c.json({ data: "Invalid credentials" }, 401);
+    }
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "1d" }
+    );
 
     return c.json({
       data: {
-        available: !user,
+        token,
+        username: user.username,
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Login error:", error);
     return c.json({ data: "Internal Server Error" }, 500);
   }
 };
