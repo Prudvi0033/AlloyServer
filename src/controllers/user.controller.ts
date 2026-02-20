@@ -84,6 +84,17 @@ export const loginController = async (c: Context) => {
   }
 };
 
+export const getUserInfo = (c: Context) => {
+  const user = c.get("user");
+
+  return c.json({
+    data: {
+      username: user.username,
+    },
+  });
+};
+
+
 export const logoutController = async (c: Context) => {
   return c.json({ data: "Logged out successfully" }, 200);
 };
